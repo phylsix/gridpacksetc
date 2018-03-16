@@ -21,15 +21,18 @@ def replace_gridpack_generation():
     os.chdir( cwd+'/../' )
     if not os.path.isfile('gridpack_generation.sh'):
         sys.exit('gridpack_generation.sh Not exist!! exiting..')
-    # backing up
-    cmd = 'cp gridpack_generation.sh gridpack_generation.sh.bkp'
-    os.system(cmd)
+    if not os.path.isfile('gridpack_generation.sh.bkp'):
+        # backing up
+        cmd = 'cp gridpack_generation.sh gridpack_generation.sh.bkp'
+        os.system(cmd)
 
-    replaceWith = 'wget --no-check-certificate https://wsi.web.cern.ch/wsi/mc/$model'
-    toBeReplaced = 'wget --no-check-certificate https://cms-project-generators.web.cern.ch/cms-project-generators/$model'
-    cmd = 'sed -i "s#%s#%s#g" gridpack_generation.sh' % (toBeReplaced, replaceWith)
-    print cmd
-    os.system(cmd)
+        replaceWith = 'wget --no-check-certificate https://wsi.web.cern.ch/wsi/mc/$model'
+        toBeReplaced = 'wget --no-check-certificate https://cms-project-generators.web.cern.ch/cms-project-generators/$model'
+        cmd = 'sed -i "s#%s#%s#g" gridpack_generation.sh' % (toBeReplaced, replaceWith)
+        print cmd
+        os.system(cmd)
+    else:
+        print 'gridpack_generation.sh already replaced.'
     os.chdir(cwd)
 
 def format_template(template, paramMap):
@@ -75,7 +78,10 @@ def create_parametrized_cards(tempDir, tag, params):
         os.system(cmd)
 
     os.chdir(cwd)
-    cmd = 'cp -r cards/{0} ../cards/'.format(tag)
+    if not os.path.isdir('../cards/'+tag):
+        cmd = 'cp -r cards/{0} ../cards/'.format(tag)
+    else:
+        cmd = 'cp -r cards/{0}/* ../cards/{0}'.format(tag)
     os.system(cmd)
 
 def program_customizedcard(f, params):
@@ -101,6 +107,10 @@ def run_gridpack_generation(tag):
     '''
     cwd = os.getcwd()
     os.chdir(cwd+'/../')
+    if os.path.isdir(tag):
+        print "Remenant exists! Cleaning.. ",
+        os.system('rm -rf '+tag)
+        print "Cleaned!"
     cmd = './gridpack_generation.sh {0} cards/{0} 1nd'.format(tag)
     os.system(cmd)
     os.chdir(cwd)
@@ -118,11 +128,11 @@ def lsf_submit(tag):
     os.chdir(cwd)
 
 if __name__ == "__main__":
-    #replace_gridpack_generation()
+    replace_gridpack_generation()
     template = 'psZpMuMu_Mps-XMASS_MZp-MED_ctau-DLENGTH'
     
     dm = 50
-    med = 0.4
+    med = 4e-1
     dw = 2e-12
     tempDir = 'dp_mumu'
 
@@ -131,8 +141,8 @@ if __name__ == "__main__":
     tagParams = {'XMASS': stringfy_friendly(dm), 'MED': stringfy_friendly(med), 'DLENGTH': stringfy_friendly(dl)}
     tag = format_template(template, tagParams)
 
-    #create_parametrized_cards(tempDir, tag, rawParams)
-    #os.system('ls ../cards')
-    #run_gridpack_generation(tag)
-    lsf_submit(tag)
+    create_parametrized_cards(tempDir, tag, rawParams)
+    os.system('ls -alrth ../cards')
+    run_gridpack_generation(tag)
+    #lsf_submit(tag)
 
