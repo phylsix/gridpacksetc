@@ -61,8 +61,8 @@ def create_parametrized_cards(tempDir, tag, params):
     os.chdir(tag)
     for f in os.listdir(os.getcwd()):
         if 'custom' in f:
-            program_customizedcard(f, params)
-            target = tag+'_customizedcards.dat'
+            program_customizecards(f, params)
+            target = tag+'_customizecards.dat'
         elif 'proc' in f:
             program_proccard(f, tag)
             target = tag+'_proc_card.dat'
@@ -84,7 +84,7 @@ def create_parametrized_cards(tempDir, tag, params):
         cmd = 'cp -r cards/{0}/* ../cards/{0}'.format(tag)
     os.system(cmd)
 
-def program_customizedcard(f, params):
+def program_customizecards(f, params):
     for p in params:
         cmd = 'sed -i "s#%s#%s#g" %s' % (p, str(params[p]), f)
         os.system(cmd)
