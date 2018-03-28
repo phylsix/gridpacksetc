@@ -45,7 +45,10 @@ def stringfy_friendly(num):
         0.4 -> '0p4'
         125 -> '125'
     '''
-    return str(num).replace('.', 'p') if '.' in str(num) else str(num)
+    if num-int(num) == 0:
+        return str(int(num))
+    else:
+        return str(num).replace('.', 'p') if '.' in str(num) else str(num)
 
 def create_parametrized_cards(tempDir, tag, params):
     '''
@@ -112,7 +115,13 @@ def run_gridpack_generation(tag):
         os.system('rm -rf '+tag)
         print "Cleaned!"
     cmd = './gridpack_generation.sh {0} cards/{0} 1nd'.format(tag)
+    print cmd
     os.system(cmd)
+    cmd = 'mv %s_slc6_amd64_gcc481_CMSSW_7_1_30_tarball.tar.xz %s.tar.xz' % (tag, tag)
+    print cmd
+    os.system(cmd)
+    # clean working directory, it's useless
+    os.system('rm -rf %s &' % tag)
     os.chdir(cwd)
 
 def lsf_submit(tag):
@@ -129,16 +138,16 @@ def lsf_submit(tag):
 
 if __name__ == "__main__":
     replace_gridpack_generation()
-    template = 'psZpMuMu_Mps-XMASS_MZp-MED_ctau-DLENGTH'
+    template = 'SIDMmumu_Mps-XMASS_MZp-MED_ctau-DLENGTH'
     
-    dm = 50
-    med = 4e-1
-    dw = 2e-12
+    mps = 200
+    med = 1.2
+    dw  = 2e-13
     tempDir = 'dp_mumu'
 
-    dl = (dm/med)*(2e-14/dw)
-    rawParams = {'XMASS': dm, 'MED': med, 'DWIDTH': dw}
-    tagParams = {'XMASS': stringfy_friendly(dm), 'MED': stringfy_friendly(med), 'DLENGTH': stringfy_friendly(dl)}
+    ctau = (2e-14/dw)
+    rawParams = {'XMASS': mps, 'MED': med, 'DWIDTH': dw}
+    tagParams = {'XMASS': stringfy_friendly(mps), 'MED': stringfy_friendly(med), 'DLENGTH': stringfy_friendly(ctau)}
     tag = format_template(template, tagParams)
 
     create_parametrized_cards(tempDir, tag, rawParams)
