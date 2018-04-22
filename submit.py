@@ -45,10 +45,17 @@ def stringfy_friendly(num):
         0.4 -> '0p4'
         125 -> '125'
     '''
-    if num-int(num) == 0:
-        return str(int(num))
+    if isinstance(num, int):
+        return str(num)
+    elif isinstance(num, float):
+        if int(num*100) > 0:
+            num = round(num, 2)
+            return str(num).replace('.', 'p') if '.' in str(num) else str(num)
+        else:
+            num = '%.2e' % num
+            return num.replace('.', 'p')
     else:
-        return str(num).replace('.', 'p') if '.' in str(num) else str(num)
+        raise ValueError("{0} is not a number!".format(num))
 
 def create_parametrized_cards(tempDir, tag, params):
     '''
@@ -132,8 +139,10 @@ def lsf_submit(tag):
     '''
     cwd = os.getcwd()
     os.chdir(cwd+'/../')
-    cmd = './submit_gridpack_generation.sh 15000 15000 {0} cards/{0} 2nw'.format(tag)
+    #cmd = './submit_gridpack_generation.sh 15000 15000 2nw {0} cards/{0} 8nh'.format(tag)
+    cmd = './submit_gridpack_generation.sh 15000 15000 8nh {0} cards/{0} 8nh'.format(tag)
     os.system(cmd)
+    cmd = 'mv %s_slc6_amd64_gcc481_CMSSW_7_1_30_tarball.tar.xz %s.tar.xz' % (tag, tag)
     os.chdir(cwd)
 
 if __name__ == "__main__":
@@ -142,16 +151,18 @@ if __name__ == "__main__":
     
     mps = 200
     med = 1.2
-    dw  = 2e-13
+    #dw  = 6.6e-15
+    epsilon = 2.36e-5
     tempDir = 'dp_mumu'
 
-    ctau = (2e-14/dw)
-    rawParams = {'XMASS': mps, 'MED': med, 'DWIDTH': dw}
+    #ctau = round(2e-14/dw, 2)
+    ctau = 0.08 * (0.1/med) * (1e-4/epsilon)**2 * 0.1 #cm
+    rawParams = {'XMASS': mps, 'MED': med, 'EPSILON': epsilon}
     tagParams = {'XMASS': stringfy_friendly(mps), 'MED': stringfy_friendly(med), 'DLENGTH': stringfy_friendly(ctau)}
     tag = format_template(template, tagParams)
 
     create_parametrized_cards(tempDir, tag, rawParams)
     os.system('ls -alrth ../cards')
-    run_gridpack_generation(tag)
-    #lsf_submit(tag)
+    #run_gridpack_generation(tag)
+    lsf_submit(tag)
 
