@@ -2,7 +2,13 @@
 
 # Official twiki:
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/QuickGuideMadGraph5aMCatNLO
-import os,sys
+
+''' Usage: ./submit.py -p <Mps> -m <Mdp> -e <epsilon>
+'''
+
+import os
+import sys
+import argparse
 
 def replace_gridpack_generation():
     '''
@@ -121,7 +127,7 @@ def run_gridpack_generation(tag):
         print "Remenant exists! Cleaning.. ",
         os.system('rm -rf '+tag)
         print "Cleaned!"
-    cmd = './gridpack_generation.sh {0} cards/{0} 1nd'.format(tag)
+    cmd = './gridpack_generation.sh {0} cards/{0} 1nh'.format(tag)
     print cmd
     os.system(cmd)
     cmd = 'mv %s_slc6_amd64_gcc481_CMSSW_7_1_30_tarball.tar.xz %s.tar.xz' % (tag, tag)
@@ -140,29 +146,34 @@ def lsf_submit(tag):
     cwd = os.getcwd()
     os.chdir(cwd+'/../')
     #cmd = './submit_gridpack_generation.sh 15000 15000 2nw {0} cards/{0} 8nh'.format(tag)
-    cmd = './submit_gridpack_generation.sh 15000 15000 8nh {0} cards/{0} 8nh'.format(tag)
+    cmd = './submit_gridpack_generation.sh 8000 5000 8nh {0} cards/{0} 8nh'.format(tag)
     os.system(cmd)
     cmd = 'mv %s_slc6_amd64_gcc481_CMSSW_7_1_30_tarball.tar.xz %s.tar.xz' % (tag, tag)
     os.chdir(cwd)
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--mps',      type=float, required=True, help='mass of pseudoscalar')
+    parser.add_argument('-m', '--mdp',      type=float, required=True, help='mass of dark photon')
+    parser.add_argument('-e', '--epsilon',  type=float, required=True, help='kinetic mixing parameter of dark photon')
+    args = parser.parse_args()
+
     replace_gridpack_generation()
-    template = 'SIDMmumu_Mps-XMASS_MZp-MED_ctau-DLENGTH'
+    template = 'SIDMmumu_Mps-XMASS_MZp-MED_dl-DLENGTH'
     
-    mps = 200
-    med = 1.2
-    #dw  = 6.6e-15
-    epsilon = 2.36e-5
+    mps = args.mps
+    med = args.mdp
+    epsilon = args.epsilon
     tempDir = 'dp_mumu'
 
-    #ctau = round(2e-14/dw, 2)
     ctau = 0.08 * (0.1/med) * (1e-4/epsilon)**2 * 0.1 #cm
+    decaylength = ctau * mps/2/med
     rawParams = {'XMASS': mps, 'MED': med, 'EPSILON': epsilon}
-    tagParams = {'XMASS': stringfy_friendly(mps), 'MED': stringfy_friendly(med), 'DLENGTH': stringfy_friendly(ctau)}
+    tagParams = {'XMASS': stringfy_friendly(mps), 'MED': stringfy_friendly(med), 'DLENGTH': stringfy_friendly(decaylength)}
     tag = format_template(template, tagParams)
 
     create_parametrized_cards(tempDir, tag, rawParams)
     os.system('ls -alrth ../cards')
     #run_gridpack_generation(tag)
     lsf_submit(tag)
-
